@@ -8,7 +8,10 @@ function pair_device() {
 
   var device_menu = {
     "": {"title": "KS - Pair"},
-    "< Back": () => show_main_menu()
+    "< Back": () => {
+      NRF.setScan();
+      show_main_menu();
+    }
   };
 
   NRF.setScan(function(dev) {
