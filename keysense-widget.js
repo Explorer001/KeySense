@@ -1,10 +1,9 @@
-WIDGETS = {};
-
 (() => {
   var settings = {}; /* settings in storage of bangle.js */
   var tracked_devs = {}; /* list of tracked devices with timestamps */
   var scan_interval = 0; /* interval tracked devs are checkd */
   var to_intervals = 0; /* to = not seen for scan_intervals * to_intervals */
+  var is_active = false; /* indicator if some key was found */
 
   /* listens to passive beacon pings and updates tracked_devs */
   function nrf_scan(dev) {
@@ -16,13 +15,19 @@ WIDGETS = {};
     /* update last seen timestamp */
     tracked_devs[dev.id].last_seen = getTime();
 
-    if (tracked_devs.active == false)
-      tracked_devs.active = true;
+    if (is_active == false) {
+      is_active = true;
+      Bangle.drawWidgets();
+    }
   }
 
   /* checks if tracked device went missing */
   function check_tracked_devs() {
     var time_now = getTime();
+    var active = false;
+
+    console.log(tracked_devs);
+    console.log(is_active);
 
     for (var dev of tracked_devs) {
 
@@ -37,8 +42,31 @@ WIDGETS = {};
         /* mark device as not seen */
         dev.last_seen = 0;
       }
+      else {
+        active = true;
+      }
 
     }
+
+    /* change status if no key is longer active */
+    if (is_active != active) {
+        is_active = active;
+        Bangle.drawWidgets();
+    }
+  }
+
+  /* draws widget */
+  function draw() {
+    g.reset();
+
+    if (is_active) 
+      g.setColor("#00FF00");
+    else
+      g.setColor("#FF0000");
+
+    g.drawImage(require("Storage").read("keysense-icon.img"), this.x, this.y,
+                {scale: 0.5});
+    g.setFont("6x8").drawString("K", this.x, this.y);
   }
 
   function reload() {
@@ -47,18 +75,24 @@ WIDGETS = {};
     scan_interval = settings.scan_interval || 5;
     to_intervals = settings.to_intervals || 2;
 
-    /* insert marker if initial dev was found */
-    tracked_devs.active = false;
+    /* marker if initial dev was found */
+    is_active = false;
     /* load tracked devices */
     for (var dev of settings.devices) {
       tracked_devs[dev.id] = {name: dev.name, last_seen: 0};
     }
 
-    /* set peridic check */
+    /* set periodic check */
     setInterval(check_tracked_devs, scan_interval * 1000);
     /* passive scan to save battery power */
     NRF.setScan(nrf_scan, {active: false});
   }
+
+  /* add the widget */
+  WIDGETS["keysense"]={area:"br",width:24,draw:draw,reload:function() {
+    reload();
+    Bangle.drawWidgets(); /* relayout all widgets */
+  }};
 
   reload();
 })();
