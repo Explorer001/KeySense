@@ -1,7 +1,13 @@
+Bangle.loadWidgets();
+Bangle.drawWidgets();
+
 var settings = require("Storage").readJSON("keysense.json", 1) || {};
 
 function update_settings() {
   require("Storage").write("keysense.json", settings);
+
+  if (WIDGETS["keysense"])
+    WIDGETS["keysense"].reload();
 }
 
 function pair_device() {
