@@ -104,6 +104,14 @@ function show_settings() {
 
 function show_main_menu() {
 
+  /* initialize settings if no settings found in memory */
+  if (!settings.scan_interval) {
+    settings.scan_interval = 5;
+    settings.to_intervals = 2;
+    settings.devices = [];
+    update_settings();
+  }
+
   const main_menu = {
     "": {"title": "KeySense"},
     "+ Pair": () => pair_device(),
