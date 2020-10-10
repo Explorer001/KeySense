@@ -36,7 +36,7 @@
       if ((time_now - dev.last_seen) >= (scan_interval * to_intervals)) {
         /* alarm */
         Bangle.buzz();
-        E.showAlert("Lost Key\n" + dev.name);
+        //E.showAlert("Lost Key\n" + dev.name);
         /* mark device as not seen */
         dev.last_seen = 0;
       }
