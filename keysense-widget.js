@@ -4,6 +4,7 @@
   var scan_interval = 0; /* interval tracked devs are checkd */
   var to_intervals = 0; /* to = not seen for scan_intervals * to_intervals */
   var is_active = false; /* indicator if some key was found */
+  var timer_id = -1; /* id of setInterval to later stop interval */
 
   /* listens to passive beacon pings and updates tracked_devs */
   function nrf_scan(dev) {
@@ -25,9 +26,6 @@
   function check_tracked_devs() {
     var time_now = getTime();
     var active = false;
-
-    console.log(tracked_devs);
-    console.log(is_active);
 
     for (var dev of tracked_devs) {
 
@@ -70,20 +68,31 @@
   }
 
   function reload() {
+    var config_has_devs = false;
     settings = require("Storage").readJSON("keysense.json", 1) || {};
     tracked_devs = {};
     scan_interval = settings.scan_interval || 5;
     to_intervals = settings.to_intervals || 2;
+
+    /* stop scan and interval check */
+    NRF.setScan();
+    if (timer_id != -1)
+      clearInterval(timer_id);
 
     /* marker if initial dev was found */
     is_active = false;
     /* load tracked devices */
     for (var dev of settings.devices) {
       tracked_devs[dev.id] = {name: dev.name, last_seen: 0};
+      config_has_devs = true;
     }
 
+    /* no devs here */
+    if (!config_has_devs)
+      return;
+
     /* set periodic check */
-    setInterval(check_tracked_devs, scan_interval * 1000);
+    timer_id = setInterval(check_tracked_devs, scan_interval * 1000);
     /* passive scan to save battery power */
     NRF.setScan(nrf_scan, {active: false});
   }
