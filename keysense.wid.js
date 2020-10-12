@@ -4,6 +4,7 @@
   var scan_interval = 0; /* interval tracked devs are checkd */
   var to_intervals = 0; /* to = not seen for scan_intervals * to_intervals */
   var is_active = false; /* indicator if some key was found */
+  var dev_lost = false; /* indicator if some device went missing */
   var timer_id = -1; /* id of setInterval to later stop interval */
 
   /* listens to passive beacon pings and updates tracked_devs */
@@ -25,7 +26,7 @@
   /* checks if tracked device went missing */
   function check_tracked_devs() {
     var time_now = getTime();
-    var active = false;
+    var lost = false;
 
     for (var dev of tracked_devs) {
 
@@ -39,17 +40,14 @@
         //E.showAlert("Lost Key\n" + dev.name);
         /* mark device as not seen */
         dev.last_seen = 0;
+        lost = true;
       }
-      else {
-        active = true;
-      }
-
     }
 
-    /* change status if no key is longer active */
-    if (is_active != active) {
-        is_active = active;
-        Bangle.drawWidgets();
+    /* change global lost status */
+    if (lost != dev_lost) {
+      dev_lost = lost;
+      Bangle.drawWidgets();
     }
   }
 
@@ -57,10 +55,15 @@
   function draw() {
     g.reset();
 
-    if (is_active) 
-      g.setColor("#00FF00");
-    else
+    if (is_active) {
+      if (dev_lost)
+        g.setColor("#FFFF00");
+      else
+        g.setColor("#00FF00");
+    }
+    else {
       g.setColor("#FF0000");
+    }
 
     g.drawImage(require("Storage").read("keysense-icon.img"), this.x, this.y,
                 {scale: 0.5});
@@ -81,6 +84,7 @@
 
     /* marker if initial dev was found */
     is_active = false;
+    dev_lost = false;
     /* load tracked devices */
     for (var dev of settings.devices) {
       tracked_devs[dev.id] = {name: dev.name, last_seen: 0};
