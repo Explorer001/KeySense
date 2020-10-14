@@ -28,11 +28,17 @@
     var time_now = getTime();
     var lost = false;
 
+    /* only continue if some tag was found */
+    if (!is_active)
+      return;
+
     for (var dev of tracked_devs) {
 
-      /* tag was not seen once */
-      if (dev.last_seen == 0)
+      /* tag was not seen -> take as lost */
+      if (dev.last_seen == 0) {
+        lost = true;
         continue;
+      }
 
       if ((time_now - dev.last_seen) >= (scan_interval * to_intervals)) {
         /* alarm */
